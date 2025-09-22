@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: vpa-demo-app
+spec:
+ selector:
+   matchLabels:
+     run: vpa-demo-app
+ replicas: 2
+ template:
+   metadata:
+     labels:
+       run: vpa-demo-app
+   spec:
+     containers:
+     - name: vpa-demo-app
+       image: us-docker.pkg.dev/gke-demos-345619/gke-demos/hpa-demo:latest
+       resources:
+          requests:
+            cpu: 100m
+            ephemeral-storage: 1Gi
+            memory: 512Mi
+          limits:
+            cpu: 100m
+            ephemeral-storage: 1Gi
+            memory: 512Mi
+       ports:
+       - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: vpa-demo-service
+spec:
+ ports:
+ - port: 80
+   targetPort: 8080
+ selector:
+   run: vpa-demo-app
