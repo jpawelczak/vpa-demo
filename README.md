@@ -1,28 +1,31 @@
 # VPA Demo
+You will learn how to set up VerticalPodAutoscaler (VPA) for your workloads on GKE, best practices and some considerations when using the VPA.
 
-This VerticalPodAutoscaler (VPA) demo uses a modified version of the [HorizontalPodAutoscaler (HPA) Demo](https://github.com/gke-demos/hpa-demo) example from GKE Demos repos. 
+This VerticalPodAutoscaler (VPA) demo uses a modified version of the [HorizontalPodAutoscaler (HPA) Demo](https://github.com/gke-demos/hpa-demo) example from GKE Demos repos.
 
-It creates the following resources:
+# Overview
+We will create the following resources:
 
 * `vpa-demo-app` Deployment
 * `vpa-demo-service` Service
 * `vpa-demo` VerticalPodAutoscaler with the new `InPlaceOrRecreate` mode
 
-Firstly, let's create GKE Autopilot Cluster:
+Firstly, let's create [GKE Autopilot Cluster](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-overview):
 ```
 gcloud container clusters \
 create-auto vpa-demo --region us-central1 \
---cluster-version "1.34.0-gke...." \
+--cluster-version "1.34.0-gke.2011000" \
 --release-channel "rapid"
 ```
 Note: to test VPA in Standard Cluster, remember to enable VPA on the cluster (`--enable-vertical-pod-autoscaling`).
 
-Now lets deploy the manifests:
+Now lets deploy all the manifests:
 ```
 kubectl apply -f manifests
 ```
 
-# Vertical Autoscaling
+# Setting up VPA on GKE
+With [GKE managed VPA](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler), you get the VerticalPodAutoscaler capabilities with no-to-minimum cluster-level configurations.
 
 ### New VPA's mode InPlaceOrRecreate
 Now let's go through the new [VPA's InPlaceOrRecreate mode](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler/enhancements/4016-in-place-updates-support) that allows VPA to adjust resources in-place, without restarting pods decreasing services disruptions.
@@ -48,9 +51,9 @@ kubectl describe vpa vpa-demo
 
 Have you noticed `Message: Some containers have a small number of samples` and `Type: LowConfidence`? It means VPA does not have enough data sample to make an informed recommendation (reminder: VPA generates recommendations based on gathered data over some period of time).
 
-Remember: it is good idea to add some boundries to VPA's recommendations by applying `Resource Policies` with minAllowed and maxAllowed values. It will keep the resources under control (you can add the resource policies in vpa.yaml or via GKE Console UI).
+*Remainder* : it is good idea to add some boundries to VPA's recommendations by applying `Resource Policies` with minAllowed and maxAllowed values. It will keep the resources under control (you can add the resource policies in vpa.yaml or via GKE Console UI).
 
-# Generate some load
+# Scale-up with some load
 
 For generating load, the `load.sh` script is provided.  
 
