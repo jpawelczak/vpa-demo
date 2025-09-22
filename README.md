@@ -13,7 +13,7 @@ Firstly, let's create GKE Autopilot Cluster:
 gcloud container clusters \
 create-auto vpa-demo --region us-central1 \
 --cluster-version "1.34.0-gke.1709000" \
---release-channel "rapid" \
+--release-channel "rapid"
 ```
 Note: to test VPA in Standard Cluster, remember to enable VPA on the cluster (`--enable-vertical-pod-autoscaling`).
 
