@@ -1,5 +1,5 @@
 # VPA Demo
-You will learn how to set up VerticalPodAutoscaler (VPA) for your workloads on GKE, best practices and some considerations when using the VPA.
+You will learn how to set up VerticalPodAutoscaler (VPA) with new InPlaceOrRecreate mode for your workloads on GKE, best practices and some considerations when using the VPA.
 
 This VerticalPodAutoscaler (VPA) demo uses a modified version of the [HorizontalPodAutoscaler (HPA) Demo](https://github.com/gke-demos/hpa-demo) example from GKE Demos repos.
 
@@ -51,7 +51,11 @@ kubectl describe vpa vpa-demo
 
 Have you noticed `Message: Some containers have a small number of samples` and `Type: LowConfidence`? It means VPA does not have enough data sample to make an informed recommendation (reminder: VPA generates recommendations based on gathered data over some period of time).
 
-*Remainder* : it is good idea to add some boundries to VPA's recommendations by applying `Resource Policies` with minAllowed and maxAllowed values. It will keep the resources under control (you can add the resource policies in vpa.yaml or via GKE Console UI).
+### Adding limitations for better cost control
+
+It is good idea to add some boundries to VPA's recommendations by applying `Resource Policies` with minAllowed and maxAllowed values. It will keep the resources under control (you can add the resource policies in vpa.yaml or via GKE Console UI).
+
+We will explore further those options in next iterations of the VPA Demo.
 
 # Scale-up with some load
 
