@@ -1,9 +1,8 @@
 #!/bin/sh
 
-#20 workers for 2 min
-#kubectl run -i --tty --rm hey --image us-docker.pkg.dev/gke-demos-345619/hey/hey --restart=Never --  -c 20 -z 2m  http://vpa-demo-service
+#10 workers for 120 min
+echo "starting test of 10 workers for 120 min"
 
-#100 requests for 2 min
-echo "starting test of 50 requests for 2 min"
+kubectl run -i --tty --rm hey --image us-docker.pkg.dev/gke-demos-345619/hey/hey --restart=Never --  -c 10 -z 120m  http://vpa-demo-service
 
-kubectl run -i --tty --rm hey --image us-docker.pkg.dev/gke-demos-345619/hey/hey --restart=Never --  -n 400 -z 2m  http://vpa-demo-service
+#TODO: 100 requests during weekday, minimum requests during weekends
