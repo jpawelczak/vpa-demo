@@ -21,7 +21,7 @@ We will also apply some boundries to have better control over resource costs.
 
 # Setting up VPA on GKE Standard Cluster
 
-Firstly, let's create GKE Standard Cluster:
+Firstly, let's create GKE Standard Cluster with enabled VPA:
 ```
 gcloud container clusters \
 create vpa-demo --region us-central1 \
@@ -57,7 +57,7 @@ Now, let's check VPA's recommendations about container-level CPU and Mem resourc
 kubectl describe vpa vpa-demo
 ```
 
-Have you noticed `Message: Some containers have a small number of samples` and `Type: LowConfidence`? It means VPA does not have enough data sample to make an relevant recommendation - let's use `ContainerResourcePolicy` to demonstrate the in-place resizing capabilities of the new VPA InPlaceOrRecreate mode.
+Have you noticed `Message: Some containers have a small number of samples` and `Type: LowConfidence`? It means VPA does not have enough data sample to make an relevant recommendation - let's use `ContainerResourcePolicy` to easily demonstrate the in-place resizing capabilities of the new VPA InPlaceOrRecreate mode.
 
 ### VPA's in-place resizing - a quick demo
 

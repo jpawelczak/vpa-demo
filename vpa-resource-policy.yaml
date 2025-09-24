@@ -1,0 +1,21 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vpa-demo
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       vpa-demo-app
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"  # Use explicit mode instead of deprecated "Auto"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: 'vpa-demo-app'
+        minAllowed:
+          cpu: 500m
+          memory: 1000Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 1000Mi
+        controlledResources: ["cpu", "memory"]
