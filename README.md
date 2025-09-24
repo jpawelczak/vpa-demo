@@ -172,7 +172,7 @@ kubectl apply -f manifests
 
 Apply the `ContainerResourcePolicy` for vpa-demo-app by running `kubectl apply -f vpa-resource-policy.yaml`, .... (TODO). After few seconds, run `kubectl get pods` to check the pods' `RESTARTS` and `AGE`.
 
-*IMPORTANT NOTE*: when analyzing VPA's autoscaling events, mind that VPA will *recreate* pods in IPPR mode to resize, including applying [Autopilot's minimum resources and CPU:Mem ratio constrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests) - that is known limitation of the VPA IPPR Public Preview release.
+*IMPORTANT NOTE*: when analyzing VPA's autoscaling events, mind that VPA will fallback to *recreating* pods in IPPR mode to resize the pods, including applying [Autopilot's minimum resources and CPU:Mem ratio constrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests) (as in the current behavior of Auto or Recreate mode) - that is known limitation of the VPA IPPR Public Preview release.
 
 # Want even better cost control?
 
