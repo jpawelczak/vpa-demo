@@ -26,7 +26,7 @@ Firstly, let's create GKE Standard Cluster with enabled VPA:
 gcloud container clusters create stnd-rapid-vpa-demo \
     --location=us-east1 \
     --project=jpawelczak-gke-dev \
-    --cluster-version=1.34.0-gke.2011000 \
+    --cluster-version=1.34.0-gke.... \
     --enable-vertical-pod-autoscaling
     --release-channel=RAPID
 ```
@@ -161,7 +161,7 @@ Firstly, let's create GKE Autopilot Cluster (enabled VPA by default):
 gcloud container clusters create-auto auto-rapid-vpa-demo \
     --location=us-east1 \
     --project=jpawelczak-gke-dev \
-    --cluster-version=1.34.0-gke.2011000 \
+    --cluster-version=1.34.0-gke.... \
     --release-channel=RAPID
 ```
 
@@ -190,10 +190,3 @@ Due to VPA nature and how it works, it is recommended to follow those steps:
 IMPORTANT NOTE: when analyzing VPA's autoscaling events, mind that VPA will *recreate* pods in IPPR mode to apply [Autopilot Cluster minimum resources and CPU:Mem ratio constrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests) - that is known limitation of the VPA IPPR Public Preview release.
 
 Note: while Autopilot has VPA enabled by default, to test VPA on Standard Cluster you have to enable the VPA (`--enable-vertical-pod-autoscaling`).
-
-# Clean-up
-
-If you are done for today, you can remove the manifests:
-```
-kubectl delete -f manifests
-```
