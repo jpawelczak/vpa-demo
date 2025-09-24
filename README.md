@@ -25,7 +25,7 @@ Firstly, let's create GKE Standard Cluster with enabled VPA:
 ```
 gcloud container clusters create stnd-rapid-vpa-demo \
     --location=us-east1 \
-    --project=jpawelczak-gke-dev \
+    --project=<you-project-ID> \
     --cluster-version=1.34.0-gke.... \
     --enable-vertical-pod-autoscaling
     --release-channel=RAPID
@@ -160,7 +160,7 @@ Firstly, let's create GKE Autopilot Cluster (enabled VPA by default):
 ```
 gcloud container clusters create-auto auto-rapid-vpa-demo \
     --location=us-east1 \
-    --project=jpawelczak-gke-dev \
+    --project=<you-project-ID> \
     --cluster-version=1.34.0-gke.... \
     --release-channel=RAPID
 ```
