@@ -161,7 +161,6 @@ Firstly, let's create GKE Autopilot Cluster (enabled VPA by default):
 gcloud container clusters create-auto auto-rapid-vpa-demo \
     --location=us-east1 \
     --project=<you-project-ID> \
-    --cluster-version=1.34.0-gke.... \
     --release-channel=RAPID
 ```
 
@@ -170,9 +169,18 @@ Now lets deploy all the manifests:
 kubectl apply -f manifests
 ```
 
-Apply the `ContainerResourcePolicy` for vpa-demo-app by running `kubectl apply -f vpa-resource-policy.yaml`, .... (TODO). After few seconds, run `kubectl get pods` to check the pods' `RESTARTS` and `AGE`.
+Apply the `ContainerResourcePolicy` for vpa-demo-app by running `kubectl apply -f vpa-resource-policy.yaml`. After some time VPA will update allocated resources to meet the minimum CPU and minimum Mem defined in the `ContainerResourcePolicy`.
 
 *IMPORTANT NOTE*: when analyzing VPA's autoscaling events, mind that VPA will fallback to *recreating* pods in IPPR mode to resize the pods, including applying [Autopilot's minimum resources and CPU:Mem ratio constrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests) (as in the current behavior of Auto or Recreate mode) - that is known limitation of the VPA IPPR Public Preview release.
+
+# Q&A
+
+Q: For new workloads (without usage data), what is the minimum time a CPU increase must be seen before VPA apply new recommendation?
+A: 
+
+Q: When workload is running for a long time, how long it takes for VPA to apply recommandations after difference in cpu usage?
+A: 
+
 
 # Want even better cost control?
 
@@ -186,7 +194,3 @@ Due to VPA nature and how it works, it is recommended to follow those steps:
 1. Apply VPA for a workload in "Off" mode - it gathers resource usage data.
 2. Once you have usage data for few days, change the mode to `InPlaceOrRecreate` and apply `ContainerResourcePolicy` to keep the resources under control.
 3. Let VPA actuate the resources of the stateless workloads in-place, so that you can focus on other aspects while improving costs and reliability of the workload.
-
-IMPORTANT NOTE: when analyzing VPA's autoscaling events, mind that VPA will *recreate* pods in IPPR mode to apply [Autopilot Cluster minimum resources and CPU:Mem ratio constrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests) - that is known limitation of the VPA IPPR Public Preview release.
-
-Note: while Autopilot has VPA enabled by default, to test VPA on Standard Cluster you have to enable the VPA (`--enable-vertical-pod-autoscaling`).

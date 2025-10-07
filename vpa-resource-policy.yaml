@@ -12,10 +12,11 @@ spec:
   resourcePolicy:
     containerPolicies:
       - containerName: 'vpa-demo-app'
+        controlledResources: ["cpu", "memory"]
+        mode: Auto
         minAllowed:
           cpu: 500m
           memory: 1000Mi
         maxAllowed:
           cpu: 500m
           memory: 1000Mi
-        controlledResources: ["cpu", "memory"]
