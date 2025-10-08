@@ -17,13 +17,13 @@ spec:
        image: us-docker.pkg.dev/gke-demos-345619/gke-demos/hpa-demo:latest
        resources:
           requests:
-            cpu: 500m
+            cpu: 250m
             ephemeral-storage: 1Gi
-            memory: 1024Mi
+            memory: 512Mi
           limits:
-            cpu: 500m
+            cpu: 250m
             ephemeral-storage: 1Gi
-            memory: 1024Mi
+            memory: 512Mi
        ports:
        - containerPort: 8080
 ---
