@@ -109,6 +109,69 @@ Now lets check the vpa configuration (`kubectl get vpa`):
 NAME        MODE                CPU    MEM      PROVIDED   AGE
 vpa-demo    InPlaceOrRecreate   350m   512Mi    True       43h
 ```
+Now, let's check VPA's recommendations about container-level CPU and Mem resources:
+```
+kubectl describe vpa vpa-demo
+```
+
+You should see something like this:
+```
+Name:         vpa-demo
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  autoscaling.k8s.io/v1
+Kind:         VerticalPodAutoscaler
+Metadata:
+  Creation Timestamp:  2025-10-08T09:15:57Z
+  Generation:          2
+  Resource Version:    1759915380219215015
+  UID:                 6b16d33e-2e63-4678-b602-45298cc68935
+Spec:
+  Resource Policy:
+    Container Policies:
+      Container Name:  vpa-demo-app
+      Controlled Resources:
+        cpu
+        memory
+      Max Allowed:
+        Cpu:     350m
+        Memory:  512Mi
+      Min Allowed:
+        Cpu:     350m
+        Memory:  512Mi
+      Mode:      Auto
+  Target Ref:
+    API Version:  apps/v1
+    Kind:         Deployment
+    Name:         vpa-demo-app
+  Update Policy:
+    Update Mode:  InPlaceOrRecreate
+Status:
+  Conditions:
+    Last Transition Time:  2025-10-08T09:23:00Z
+    Status:                False
+    Type:                  LowConfidence
+    Last Transition Time:  2025-10-08T09:18:00Z
+    Status:                True
+    Type:                  RecommendationProvided
+  Recommendation:
+    Container Recommendations:
+      Container Name:  vpa-demo-app
+      Lower Bound:
+        Cpu:     350m
+        Memory:  512Mi
+      Target:
+        Cpu:     350m
+        Memory:  512Mi
+      Uncapped Target:
+        Cpu:     2m
+        Memory:  2097152
+      Upper Bound:
+        Cpu:     350m
+        Memory:  512Mi
+Events:          <none>
+```
 
 Now lets check pod's allocated resources:
 ```
@@ -134,8 +197,6 @@ Now lets check pod's allocated resources:
         memory: 512Mi
     restartCount: 0
 ```
-
-Run `kubectl get pods` to check the pods' `RESTARTS` and `AGE`.
 
 Next, modify minAllowed and maxAllowed part of the yaml, redeploy it by running `kubectl apply -f vpa-resource-policy.yaml` again and check how VPA with in-place resizing works for varius scenarios.
 
@@ -179,13 +240,13 @@ Now decrease CPU from 350m to 300m by modifing minAllowed and maxAllowed in `vpa
 # Q&A
 
 Q: After applying `ContainerResourcePolicy` to a vpa-demo-app, how long it takes for VPA to apply the minAllowed values? <br>
-A: The minAllowed will be incorporated right away to cap the value of the recommendation. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. If minAllowed is set to a value above the existing utilization, VPA will try to apply the recommendation right away. There are multiple factors that may cause it to not be successful (e.g., PDBs, etc)
+A: The minAllowed will be incorporated right away to cap the value of the recommendation. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. If minAllowed is set to a value above the existing utilization, VPA will try to apply the recommendation right away.
 
 Q: For new workloads (without usage data), what is the minimum time a CPU increase must be seen before VPA apply new recommendation? <br>
-A: At least a couple of minutes. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. A recommendation will start with very very wide ranges (called low confidence recommendation) to avoid a quick eviction. And the range will narrow as time goes by (VPA gets a high confidence recommendation after ~a week worth of data, in which the interval is narrow enough).
+A: At least a couple of minutes. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. A recommendation will start with very very wide ranges (called low confidence recommendation). The range will narrow as time goes by (VPA gets a high confidence recommendation after ~a week worth of data, in which the interval is narrow enough).
 
 Q: When workload is running for a some time, how long it takes for VPA to apply recommandations after difference in cpu usage? <br>
-A: Very similar to the question above. If the CPU usage goes outside of the interval, VPA will evict it right away (considering no PDBs, etc).
+A: Very similar to the question above. If the CPU usage goes outside of the interval, VPA will try to apply recommendation right away.
 
 # Want even better cost control? (work-in-progress)
 
