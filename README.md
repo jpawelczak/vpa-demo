@@ -1,5 +1,5 @@
 # Introducing new VPA into GKE
-With the [VerticalPodAutoscaler InPlaceOrRecreate (VPA IPPR) mode](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler) in Public Preview, now you can benefit from no-to-low disruptive vertical auto scaling by:
+With the [VerticalPodAutoscaler InPlaceOrRecreate (VPA IPPR) mode](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler) in Public Preview, now you can benefit from no-to-low disruptive vertical auto scaling by starting from GKE 1.34.0-gke.2201000:
 
 * automating stateless workload rightsizing without downtime
 * scaling-up vertically of stateful workloads without downtime
@@ -26,9 +26,8 @@ Firstly, let's create GKE Standard Cluster with enabled VPA:
 gcloud container clusters create stnd-rapid-vpa-demo \
     --location=us-east1 \
     --project=<you-project-ID> \
-    --cluster-version=1.34.0-gke.... \
     --enable-vertical-pod-autoscaling
-    --release-channel=RAPID
+    --release-channel=rapid
 ```
 
 Now lets deploy all the manifests:
@@ -138,11 +137,11 @@ Now lets check pod's allocated resources:
 
 Run `kubectl get pods` to check the pods' `RESTARTS` and `AGE`.
 
-Next, modify minAllowed and maxAllowed, redeploy it by running `kubectl apply -f vpa-resource-policy.yaml` again and check how VPA with in-place resizing works for varius scenarios.
+Next, modify minAllowed and maxAllowed part of the yaml, redeploy it by running `kubectl apply -f vpa-resource-policy.yaml` again and check how VPA with in-place resizing works for varius scenarios.
 
-### VPA's in-place resizing - longer path (WIP)
+### VPA's in-place resizing - longer path (work-in-progress)
 
-TODO: we will add further steps to the demo in next iterations of the VPA Demo.
+**TODO**: we will add further steps to the demo in next iterations of the VPA Demo.
 
 Let's generate some data to help VPA prepare more relevant recommendations. 
 
@@ -160,7 +159,7 @@ Firstly, let's create GKE Autopilot Cluster (enabled VPA by default):
 gcloud container clusters create-auto auto-rapid-vpa-demo \
     --location=us-east1 \
     --project=<you-project-ID> \
-    --release-channel=RAPID
+    --release-channel=rapid
 ```
 
 Now lets deploy all the manifests:
@@ -172,27 +171,31 @@ Now let's see how Autopilot assigns more resources. To make it strightforward, a
 
 Now decrease CPU from 550m to 350m by modifing minAllowed and maxAllowed in `vpa-resource-policy.yaml` (or edit it via GCP Console User Interface). This time, the system will decrease CPU from 550m to 350m.
 
-*IMPORTANT NOTE*: when analyzing VPA's autoscaling events, mind that VPA will fallback to *recreating* pods in IPPR mode to apply bigger changes, including applying [Autopilot's minimum resources and CPU:Mem ratio constrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests) (as in the current behavior of Auto or Recreate mode) - that is known limitation of the VPA IPPR Public Preview release.
+**IMPORTANT NOTE**: when analyzing VPA's autoscaling events, mind that VPA will fallback to *recreating* pods in IPPR mode to apply bigger changes, including applying [Autopilot's minimum resources and CPU:Mem ratio constrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests) (as in the current behavior of Auto or Recreate mode) - that is known limitation of the VPA IPPR Public Preview release.
+
+# Events for in-place scaling
+Once VPA InPlaceOrRecreate applied changes, you can spot in-place scaling events in "Pod details" page, Event tab:
+![Screenshot of in-place scaling events](vpa-ippr-event.png)
 
 # Q&A
 
-Q: For new workloads (without usage data), what is the minimum time a CPU increase must be seen before VPA apply new recommendation?
+Q: After applying `ContainerResourcePolicy` to a vpa-demo-app, how long it takes for VPA to apply the minAllowed values? <br>
+A: The minAllowed will be incorporated right away to cap the value of the recommendation. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. If minAllowed is set to a value above the existing utilization, VPA will try to apply the recommendation right away. There are multiple factors that may cause it to not be successful (e.g., PDBs, etc)
 
-A: 
+Q: For new workloads (without usage data), what is the minimum time a CPU increase must be seen before VPA apply new recommendation? <br>
+A: At least a couple of minutes. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. A recommendation will start with very very wide ranges (called low confidence recommendation) to avoid a quick eviction. And the range will narrow as time goes by (VPA gets a high confidence recommendation after ~a week worth of data, in which the interval is narrow enough).
 
-Q: When workload is running for a long time, how long it takes for VPA to apply recommandations after difference in cpu usage?
+Q: When workload is running for a some time, how long it takes for VPA to apply recommandations after difference in cpu usage? <br>
+A: Very similar to the question above. If the CPU usage goes outside of the interval, VPA will evict it right away (considering no PDBs, etc).
 
-A: 
+# Want even better cost control? (work-in-progress)
 
-# Want even better cost control?
+**TODO**: We will explore further availale options in next iterations of the VPA Demo.
 
 As presented earlier, it is a good idea to add some boundries to VPA's recommendations by applying `ContainerResource Policy` with minAllowed and maxAllowed values. It will keep container's resources under control.
 
-TODO: We will explore further availale options in next iterations of the VPA Demo.
-
 # Summary
 
-Due to VPA nature and how it works, it is recommended to follow those steps:
-1. Apply VPA for a workload in "Off" mode - it gathers resource usage data.
-2. Once you have usage data for few days, change the mode to `InPlaceOrRecreate` and apply `ContainerResourcePolicy` to keep the resources under control.
-3. Let VPA actuate the resources in-place, so that you can focus on other aspects while improving costs and reliability of the workload is managed automatically by the VPA IPPR.
+With VPA with `InPlaceOrRecreate` mode is recommended to follow those steps:
+1. Apply VPA with `InPlaceOrRecreate` mode for a workload with minAllowed and maxAllowed values defined in `ContainerResource Policy` - the VPA gathers resource usage data while keeping minimum resources required for reliable workload operation.
+2. Once you gather more data, update the `ContainerResource Policy` accordingly - let VPA actuate the resources in-place, so that you can focus on other aspects while improving costs and reliability of the workload is managed automatically by the VPA IPPR.
