@@ -235,9 +235,9 @@ Now let's see how Autopilot assigns more resources. To make it strightforward, a
 
 Now decrease CPU from 350m to 300m by modifing minAllowed and maxAllowed in `vpa-resource-policy.yaml` (or edit it via GCP Console User Interface). This time, the system will decrease CPU from 350m to 300m.
 
-**IMPORTANT NOTE**: when testing VPA InPlaceOrRecreate mode, mind that VPA will fallback to *recreating* pods to apply bigger changes, including applying [Autopilot's minimum resources and CPU:Mem ratio constrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests) (as in the current behavior of Auto or Recreate mode) - that is known limitation of the VPA IPPR Public Preview release.
+# Limitations and Q&A
 
-# Q&A
+Limitations: [GKE managed VPA documentation](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler) <br>
 
 Q: After applying `ContainerResourcePolicy` to a vpa-demo-app, how long it takes for VPA to apply the minAllowed values? <br>
 A: The minAllowed will be incorporated right away to cap the value of the recommendation. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. If minAllowed is set to a value above the existing utilization, VPA will try to apply the recommendation right away.
@@ -246,7 +246,7 @@ Q: For new workloads (without usage data), what is the minimum time a CPU increa
 A: At least a couple of minutes. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. A recommendation will start with very very wide ranges (called low confidence recommendation). The range will narrow as time goes by (VPA gets a high confidence recommendation after ~a week worth of data, in which the interval is narrow enough).
 
 Q: When workload is running for a some time, how long it takes for VPA to apply recommandations after difference in cpu usage? <br>
-A: Very similar to the question above. If the CPU usage goes outside of the interval, VPA will try to apply recommendation right away.
+A: If the CPU usage goes outside of the interval, VPA will try to apply recommendation right away.
 
 # Want even better cost control? (work-in-progress)
 
