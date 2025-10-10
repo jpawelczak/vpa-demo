@@ -1,23 +1,12 @@
 # Introducing new VPA into GKE
-With the [VerticalPodAutoscaler InPlaceOrRecreate (VPA IPPR) mode](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler) in Public Preview, now you can benefit from no-to-low disruptive vertical auto scaling by starting from GKE 1.34.0-gke.2201000:
-
-* automating stateless workload rightsizing without downtime
-* scaling-up vertically of stateful workloads without downtime
-* seamless scale-down when the traffic is low
-* automating k8s Jobs rightsizing
-
-You will learn how to set up mode for your workloads on GKE, best practices and some considerations when using the VPA for automated stateless workload rightsizing.
-
-The demo is based on [HPA Demo](https://github.com/gke-demos/hpa-demo) from GKE Demos repo.
+With the [VerticalPodAutoscaler InPlaceOrRecreate (VPA IPPR) mode (Public Preview)](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler), now you can benefit from no-to-low disruptive vertical auto scaling starting from GKE 1.34.0-gke.2201000.
 
 # Automated Workload Rightsizing with GKE VPA IPPR
-We will create the following:
+In this demo, we will use VPA as automated workload rightsizing. We will create the following:
 
 * `vpa-demo-app` Deployment
 * `vpa-demo-service` Service
 * `vpa-demo` VerticalPodAutoscaler with the new `InPlaceOrRecreate` mode
-
-We will also apply some boundries to have better control over resource costs.
 
 # Setting up VPA on GKE Standard Cluster
 
@@ -30,17 +19,17 @@ gcloud container clusters create stnd-rapid-vpa-demo \
     --release-channel=rapid
 ```
 
-Now lets deploy all the manifests:
+As you may notice, with [GKE managed VPA](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler) you get the VerticalPodAutoscaler capabilities with no-to-minimum cluster-level configurations.
+
+### New VPA InPlaceOrRecreate mode
+Now let's go through the new VPA's `InPlaceOrRecreate` mode that allows VPA to adjust resources in-place, without recreating pods improving workload reliability.
+
+Firstly, lets deploy all the manifests:
 ```
 kubectl apply -f manifests
 ```
 
-As you may notice, with [GKE managed VPA](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler) you get the VerticalPodAutoscaler capabilities with no-to-minimum cluster-level configurations.
-
-### New VPA InPlaceOrRecreate mode
-Now let's go through the new [VPA's InPlaceOrRecreate mode](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler/enhancements/4016-in-place-updates-support) that allows VPA to adjust resources in-place, without recreating pods improving services reliability.
-
-We deployed /manifests/vpa.yaml:
+VPA with `InPlaceOrRecreate` mode looks like this (/manifests/vpa.yaml):
 ```
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -55,7 +44,7 @@ spec:
     updateMode: "InPlaceOrRecreate"  # Use explicit mode instead of deprecated "Auto"
 ```
 
-After about 3 minutes from applying the manifests, check VPA configuration:
+After some time from deploying the vpa-demo-app workload, check VPA configuration:
 ```
 kubectl get vpa
 ```
@@ -65,18 +54,16 @@ This is what you should see:
 NAME       MODE                CPU   MEM       PROVIDED   AGE
 vpa-demo   InPlaceOrRecreate   1m    2097152   True       8m45s
 ```
-Once you see "PROVIDED" as `True` as in the above example, it means VPA is up and running.
+Once you see "PROVIDED" as `True` as in the above example, it means VPA is up and running for the workload.
+
+### VPA's in-place resizing with ContainerResourcePolicy
 
 Now, let's check VPA's recommendations about container-level CPU and Mem resources:
 ```
 kubectl describe vpa vpa-demo
 ```
 
-Have you noticed `Message: Some containers have a small number of samples` and `Type: LowConfidence`? It means VPA does not have enough data sample to make an relevant recommendation - let's use VPA's `ContainerResourcePolicy` to easily demonstrate the in-place resizing capabilities of the new VPA `InPlaceOrRecreate` mode.
-
-### VPA's in-place resizing - a quick demo
-
-To observe how a container is resized in-place, you can apply `ContainerResourcePolicy` ([details](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler#containerresourcepolicy_v1_autoscalingk8sio)) for vpa-demo-app by running `kubectl apply -f vpa-resource-policy.yaml`, you will notice that VPA scales-up the pods to CPU 550m without recreating the pods. 
+Have you noticed `Message: Some containers have a small number of samples` and `Type: LowConfidence`? It means VPA does not have enough data sample to make a relevant recommendation, as we deployed VPA for a new workload (no historic data available). To set resources on a level required to maintain reliability of the workload, let's use VPA's `ContainerResourcePolicy` ([details](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler#containerresourcepolicy_v1_autoscalingk8sio)).
 
 vpa-resource-policy.yaml looks like this:
 ```
@@ -97,165 +84,29 @@ spec:
         controlledResources: ["cpu", "memory"]
         mode: Auto
         minAllowed:
-          cpu: 350m
+          cpu: 250m
           memory: 512Mi
         maxAllowed:
-          cpu: 350m
+          cpu: 500m
           memory: 512Mi
 ```
 
-Now lets check the vpa configuration (`kubectl get vpa`):
+Once applied `ContainerResourcePolicy` for vpa-demo-app by running `kubectl apply -f vpa-resource-policy.yaml`, you will notice that VPA resizes the pods in-place to CPU 250m - our minimum CPU to maintain workload's reliability.
+
+Now, let's check VPA's recommendations about container-level CPU and Mem resources (`kubectl describe vpa vpa-demo`):
 ```
-NAME        MODE                CPU    MEM      PROVIDED   AGE
-vpa-demo    InPlaceOrRecreate   350m   512Mi    True       43h
-```
-Now, let's check VPA's recommendations about container-level CPU and Mem resources:
-```
-kubectl describe vpa vpa-demo
+.....
 ```
 
-You should see something like this:
-```
-Name:         vpa-demo
-Namespace:    default
-Labels:       <none>
-Annotations:  <none>
-API Version:  autoscaling.k8s.io/v1
-Kind:         VerticalPodAutoscaler
-Metadata:
-  Creation Timestamp:  2025-10-08T09:15:57Z
-  Generation:          2
-  Resource Version:    1759915380219215015
-  UID:                 6b16d33e-2e63-4678-b602-45298cc68935
-Spec:
-  Resource Policy:
-    Container Policies:
-      Container Name:  vpa-demo-app
-      Controlled Resources:
-        cpu
-        memory
-      Max Allowed:
-        Cpu:     350m
-        Memory:  512Mi
-      Min Allowed:
-        Cpu:     350m
-        Memory:  512Mi
-      Mode:      Auto
-  Target Ref:
-    API Version:  apps/v1
-    Kind:         Deployment
-    Name:         vpa-demo-app
-  Update Policy:
-    Update Mode:  InPlaceOrRecreate
-Status:
-  Conditions:
-    Last Transition Time:  2025-10-08T09:23:00Z
-    Status:                False
-    Type:                  LowConfidence
-    Last Transition Time:  2025-10-08T09:18:00Z
-    Status:                True
-    Type:                  RecommendationProvided
-  Recommendation:
-    Container Recommendations:
-      Container Name:  vpa-demo-app
-      Lower Bound:
-        Cpu:     350m
-        Memory:  512Mi
-      Target:
-        Cpu:     350m
-        Memory:  512Mi
-      Uncapped Target:
-        Cpu:     2m
-        Memory:  2097152
-      Upper Bound:
-        Cpu:     350m
-        Memory:  512Mi
-Events:          <none>
-```
+After 1-2 weeks of gathering resource utilization data, we can revisit the VPA's recommendations and update the `ContainerResourcePolicy` accordingly.
 
-Now lets check pod's allocated resources:
-```
-  containerStatuses:
-  - allocatedResources:
-      cpu: 350m
-      ephemeral-storage: 1Gi
-      memory: 512Mi
-    containerID: containerd://8f7ab8659163c15eff15f2fe37a7d8e6f2e0d0422a0b717aec937ed21daf4ec1
-    image: us-docker.pkg.dev/gke-demos-345619/gke-demos/hpa-demo:latest
-    imageID: us-docker.pkg.dev/gke-demos-345619/gke-demos/hpa-demo@sha256:2f5c45c3198b6340bbb7c02a5bae978f7e5e117e5c214c93dd2018c8485f2eff
-    lastState: {}
-    name: vpa-demo-app
-    ready: true
-    resources:
-      limits:
-        cpu: 350m
-        ephemeral-storage: 1Gi
-        memory: 512Mi
-      requests:
-        cpu: 350m
-        ephemeral-storage: 1Gi
-        memory: 512Mi
-    restartCount: 0
-```
+# In-place resizing events
 
-Next, modify minAllowed and maxAllowed part of the yaml, redeploy it by running `kubectl apply -f vpa-resource-policy.yaml` again and check how VPA with in-place resizing works for varius scenarios.
-
-Once VPA InPlaceOrRecreate applied changes, you can spot in-place scaling events in "Pod details" page, Event tab:
+Once VPA InPlaceOrRecreate applies changes, you can check in-place scaling events in "Pod details" page, Events tab:
 ![Screenshot of in-place scaling events](vpa-ippr-event.png)
-
-### VPA's in-place resizing - longer path (work-in-progress)
-
-**TODO**: we will add further steps to the demo in next iterations of the VPA Demo.
-
-Let's generate some data to help VPA prepare more relevant recommendations. 
-
-For generating load, the `load.sh` script is provided. It uses the simple load test application [hey](https://github.com/rakyll/hey) to generate load for 120 minutes with .... (*TODO*: examples to be defined).  You can adjust the parameters in the script as you see fit.
-
-After few few hours running the [hey](https://github.com/rakyll/hey) app, let's check VPA's recommendations again:
-```
-kubectl describe vpa vpa-demo
-```
-
-# Setting up VPA on GKE Autopilot Cluster
-
-Firstly, let's create GKE Autopilot Cluster (enabled VPA by default):
-```
-gcloud container clusters create-auto auto-rapid-vpa-demo \
-    --location=us-east1 \
-    --project=<you-project-ID> \
-    --release-channel=rapid
-```
-
-Now lets deploy all the manifests:
-```
-kubectl apply -f manifests
-```
-
-Now let's see how Autopilot assigns more resources. To make it strightforward, apply the `ContainerResourcePolicy` for vpa-demo-app by running `kubectl apply -f vpa-resource-policy.yaml`. It increases CPU from 250m to 350m - VPA will update allocated resources to meet the minimum CPU defined in the `ContainerResourcePolicy`. 
-
-Now decrease CPU from 350m to 300m by modifing minAllowed and maxAllowed in `vpa-resource-policy.yaml` (or edit it via GCP Console User Interface). This time, the system will decrease CPU from 350m to 300m.
-
-# Limitations and Q&A
-
-Limitations: [GKE managed VPA documentation](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler) <br>
-
-Q: After applying `ContainerResourcePolicy` to a vpa-demo-app, how long it takes for VPA to apply the minAllowed values? <br>
-A: The minAllowed will be incorporated right away to cap the value of the recommendation. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. If minAllowed is set to a value above the existing utilization, VPA will try to apply the recommendation right away.
-
-Q: For new workloads (without usage data), what is the minimum time a CPU increase must be seen before VPA apply new recommendation? <br>
-A: At least a couple of minutes. The recommendation will be applied if the existing usage falls outside of the lower or upper bounds of the recommended resources. A recommendation will start with very very wide ranges (called low confidence recommendation). The range will narrow as time goes by (VPA gets a high confidence recommendation after ~a week worth of data, in which the interval is narrow enough).
-
-Q: When workload is running for a some time, how long it takes for VPA to apply recommandations after difference in cpu usage? <br>
-A: If the CPU usage goes outside of the interval, VPA will try to apply recommendation right away.
-
-# Want even better cost control? (work-in-progress)
-
-**TODO**: We will explore further availale options in next iterations of the VPA Demo.
-
-As presented earlier, it is a good idea to add some boundries to VPA's recommendations by applying `ContainerResourcePolicy` with minAllowed and maxAllowed values. It will keep container's resources under control.
 
 # Summary
 
-With VPA's  `InPlaceOrRecreate` mode is recommended to follow those steps:
-1. Apply VPA `InPlaceOrRecreate` mode for a workload with minAllowed and maxAllowed values defined in `ContainerResourcePolicy` (mind GKE Autopilot's min resources contrains) - the VPA gathers resource usage data while keeping minimum resources required for reliable workload operation.
-2. Once you gather more data, update the `ContainerResourcePolicy` accordingly - let VPA actuate the resources in-place, so that you can focus on other aspects while improving costs and reliability of the workload is managed automatically by the VPA IPPR.
+With VPA's `InPlaceOrRecreate` mode you can benefit from no-to-low disruptive vertical auto scaling for automated workload rightsizing:
+1. Apply VPA `InPlaceOrRecreate` mode for a workload with minAllowed and maxAllowed values defined in `ContainerResourcePolicy` ([mind GKE Autopilot's min and ratio resource contrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests)) - VPA gathers resource usage data while keeping minimum resources required for reliable workload operation.
+2. Once you gather more resource utilization data, update the `ContainerResourcePolicy` accordingly - let VPA actuate the resources in-place within minAllowed and maxAllowed boundries, so that you can focus on other aspects while improving workload's resource utilization is managed automatically by the VPA IPPR.
