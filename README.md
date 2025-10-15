@@ -97,7 +97,8 @@ spec:
 
 Noticed Mem has the same values for minAllowed and maxAllowed? This way, we want to keep workloads stable by preventing from applying Mem related actuations just yet. Once we collect more data, we can change those settings.
 
-Once applied `ContainerResourcePolicy`, you will notice that VPA resizes the pods in-place to CPU 250m, value being our minimum CPU to maintain workload's reliability.
+Once applied `ContainerResourcePolicy`, you will notice that VPA resizes the pods in-place to CPU 250m, value being our minimum CPU to maintain workload's reliability. You can check in-place scaling events created by applying `ContainerResourcePolicy` `minAllowed` in "Pod details" page , Events tab:
+![Screenshot of in-place scaling events](vpa-ippr-event.png)
 
 Now, let's check VPA Recommendations about container-level CPU and Mem resources (`kubectl describe vpa vpa-demo`):
 ```
@@ -182,11 +183,6 @@ hey                             0/1     Completed   0          45h
 vpa-demo-app-6f79bd954f-qnbtn   1/1     Running     0          4d19h
 vpa-demo-app-6f79bd954f-wzdxn   1/1     Running     0          4d18h
 ```
-
-# In-place resizing events
-
-Once VPA `InPlaceOrRecreate` applies `ContainerResourcePolicy` minAllowed (an in-place resize event), you can check in-place scaling events in "Pod details" page, Events tab:
-![Screenshot of in-place scaling events](vpa-ippr-event.png)
 
 # Summary
 
