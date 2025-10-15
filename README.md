@@ -169,7 +169,7 @@ You can modify it directly in vpa object (as demonstrated above) or via Console 
 
 # Automated rightsizing based on traffic
 
-Now, let's generate some load for 10 hours using [hey](https://github.com/rakyll/hey) app:
+Now, let's generate some load for **10 hours** using [hey](https://github.com/rakyll/hey) app: </br>
 `kubectl run -i --tty --rm hey --image us-docker.pkg.dev/gke-demos-345619/hey/hey --restart=Never --  -c 2 -z 1200m  http://vpa-demo-service`
 
 Once VPA collected some data, it started to apply recommendations to match resources with the load:
