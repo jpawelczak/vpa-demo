@@ -167,9 +167,25 @@ As a safety net for VPA's actuations of container's resources, it is highly reco
 You can modify it directly in vpa object (as demonstrated above) or via Console UI:
 ![Screenshot of container resource policy](vpa-ui.png)
 
+# Automated rightsizing based on traffic
+
+Now, let's generate some load for 10 hours using [hey](https://github.com/rakyll/hey) app:
+`kubectl run -i --tty --rm hey --image us-docker.pkg.dev/gke-demos-345619/hey/hey --restart=Never --  -c 2 -z 1200m  http://vpa-demo-service`
+
+Once VPA collected some data, it started to apply recommendations to match resources with the load:
+![Screenshot of usage pattern for a pod with VPA IPPR](vpa-ippr-rightsizing.png)
+
+VPA actuated resources without restarting the pods (`kubectl get pods`):
+```
+NAME                            READY   STATUS      RESTARTS   AGE
+hey                             0/1     Completed   0          45h
+vpa-demo-app-6f79bd954f-qnbtn   1/1     Running     0          4d19h
+vpa-demo-app-6f79bd954f-wzdxn   1/1     Running     0          4d18h
+```
+
 # In-place resizing events
 
-Once VPA `InPlaceOrRecreate` applies changes, you can check in-place scaling events in "Pod details" page, Events tab:
+Once VPA `InPlaceOrRecreate` applies `ContainerResourcePolicy` minAllowed (an in-place resize event), you can check in-place scaling events in "Pod details" page, Events tab:
 ![Screenshot of in-place scaling events](vpa-ippr-event.png)
 
 # Summary
