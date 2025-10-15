@@ -189,3 +189,7 @@ vpa-demo-app-6f79bd954f-wzdxn   1/1     Running     0          4d18h
 With the new `InPlaceOrRecreate` mode in [GKE managed VPA](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler), you can benefit from no-to-low disruptive vertical auto scaling for automated workload rightsizing:
 1. Apply VPA `InPlaceOrRecreate` mode for a workload with minAllowed and maxAllowed values defined in `ContainerResourcePolicy` ([mind GKE Autopilot's min and ratio resource contrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests)) - VPA gathers resource usage data while keeping minimum resources required for reliable workload operation.
 2. Once you gather more resource utilization data, update the `ContainerResourcePolicy` accordingly - let VPA actuate the resources in-place within minAllowed and maxAllowed boundries, so that you can focus on other aspects while improving workload's resource utilization is managed automatically by the VPA IPPR.
+
+# Questions? Ideas for improvements?
+
+If you have questions or improvement ideas for the [k8s' VerticalPodAutoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler), you can initiate discussion using [SIG Autoscaling Group communication channels](https://github.com/kubernetes/community/tree/master/sig-autoscaling).
