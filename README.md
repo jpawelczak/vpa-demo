@@ -9,6 +9,9 @@ In this demo, we will use VPA as automated workload rightsizing. We will create 
 * `vpa-demo-service` Service
 * `vpa-demo` VerticalPodAutoscaler with the new `InPlaceOrRecreate` mode
 
+A reminder:
+Vertical Pod Autoscaler (VPA) frees users from the necessity of setting up-to-date **resource requests** for the containers in their pods. When configured, it will set the requests automatically based on usage and thus allow proper scheduling onto nodes so that appropriate resource amount is available for each pod. It will also maintain ratios between requests and limits that were specified in initial containers configuration.
+
 # Setting up VPA on GKE Standard Cluster
 
 Firstly, let's create GKE Standard Cluster on Rapid Channel with enabled VPA:
@@ -67,7 +70,10 @@ kubectl describe vpa vpa-demo
 
 Have you noticed `Message: Some containers have a small number of samples` and `Type: LowConfidence`? It means VPA does not have enough data sample to make a relevant recommendation, as we deployed VPA for a new workload (no historic data available). 
 
-To set resources on a level required to maintain reliability of the workload, we will apply VPA's `ContainerResourcePolicy` ([details](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler#containerresourcepolicy_v1_autoscalingk8sio)) by running `kubectl apply -f vpa-resource-policy.yaml`.
+To set resources on a level required to maintain reliability of the workload, we will apply VPA's `ContainerResourcePolicy` ([details](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler#containerresourcepolicy_v1_autoscalingk8sio)): 
+```
+kubectl apply -f vpa-resource-policy.yaml
+```
 
 The `vpa-resource-policy.yaml` looks like this:
 ```
@@ -97,10 +103,10 @@ spec:
 
 Noticed Mem has the same values for minAllowed and maxAllowed? This way, we want to keep workloads stable by preventing from applying Mem related actuations just yet. Once we collect more data, we can change those settings.
 
-Once applied `ContainerResourcePolicy`, you will notice that VPA resizes the pods in-place to CPU 250m, value being our minimum CPU to maintain workload's reliability. You can check in-place scaling events created by applying `ContainerResourcePolicy` `minAllowed` in "Pod details" page , Events tab:
+Once applied `ContainerResourcePolicy`, you will notice that VPA resizes pod's resource requests in-place to CPU 250m, value being our minimum CPU to maintain workload's reliability. You can check in-place scaling events created by applying `ContainerResourcePolicy` `minAllowed` in "Pod details" page , Events tab:
 ![Screenshot of in-place scaling events](vpa-ippr-event.png)
 
-Now, let's check VPA Recommendations about container-level CPU and Mem resources (`kubectl describe vpa vpa-demo`):
+Now, let's check VPA Recommendations about container-level CPU and Mem resource requests (`kubectl describe vpa vpa-demo`):
 ```
 Name:         vpa-demo
 Namespace:    default
@@ -173,7 +179,7 @@ You can modify it directly in vpa object (as demonstrated above) or via Console 
 Now, let's generate some load for **10 hours** using [hey](https://github.com/rakyll/hey) app: </br>
 `kubectl run -i --tty --rm hey --image us-docker.pkg.dev/gke-demos-345619/hey/hey --restart=Never --  -c 2 -z 1200m  http://vpa-demo-service`
 
-Once VPA collected some data, it started to apply recommendations to match resources with the load:
+Once VPA collected some data, it started to apply recommendations within `ContainerResourcePolicy` boundries to match resources with the load:
 ![Screenshot of usage pattern for a pod with VPA IPPR](vpa-ippr-rightsizing.png)
 
 VPA actuated resources without restarting the pods (`kubectl get pods`):
@@ -183,6 +189,9 @@ hey                             0/1     Completed   0          45h
 vpa-demo-app-6f79bd954f-qnbtn   1/1     Running     0          4d19h
 vpa-demo-app-6f79bd954f-wzdxn   1/1     Running     0          4d18h
 ```
+
+# Addressing eviction
+To be continued...
 
 # Summary
 

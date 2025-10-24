@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-demo-eviction
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vpa-demo-eviction
+  template:
+    metadata:
+      labels:
+        app: vpa-demo-eviction
+      annotations:
+        "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+    spec:
+      containers:
+      - name: vpa-demo-eviction
+        image: us-docker.pkg.dev/gke-demos-345619/gke-demos/hpa-demo:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: vpa-demo-service
+spec:
+ ports:
+ - port: 80
+   targetPort: 8080
+ selector:
+   run: vpa-demo-eviction
