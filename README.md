@@ -94,14 +94,12 @@ spec:
         controlledResources: ["cpu", "memory"]
         mode: Auto
         minAllowed:
-          cpu: 250m
-          memory: 512Mi
+          cpu: 200m
+          memory: 256Mi
         maxAllowed:
           cpu: 500m
           memory: 512Mi
 ```
-
-Noticed Mem has the same values for minAllowed and maxAllowed? This way, we want to keep workloads stable by preventing from applying Mem related actuations just yet. Once we collect more data, we can change those settings.
 
 Once applied `ContainerResourcePolicy`, you will notice that VPA resizes pod's resource requests in-place to CPU 250m, value being our minimum CPU to maintain workload's reliability. You can check in-place scaling events created by applying `ContainerResourcePolicy` `minAllowed` in "Pod details" page , Events tab:
 ![Screenshot of in-place scaling events](vpa-ippr-event.png)
@@ -130,8 +128,8 @@ Spec:
         Cpu:     500m
         Memory:  512Mi
       Min Allowed:
-        Cpu:     250m
-        Memory:  512Mi
+        Cpu:     150m
+        Memory:  256Mi
       Mode:      Auto
   Target Ref:
     API Version:  apps/v1
@@ -190,7 +188,7 @@ vpa-demo-app-6f79bd954f-qnbtn   1/1     Running     0          4d19h
 vpa-demo-app-6f79bd954f-wzdxn   1/1     Running     0          4d18h
 ```
 
-# Addressing eviction
+# Addressing potential eviction
 To be continued...
 
 # Summary

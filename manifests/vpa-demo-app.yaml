@@ -17,9 +17,9 @@ spec:
        image: us-docker.pkg.dev/gke-demos-345619/gke-demos/hpa-demo:latest
        resources:
           requests:
-            cpu: 400m
+            cpu: 100m
             ephemeral-storage: 1Gi
-            memory: 512Mi
+            memory: 128Mi
           limits:
             cpu: 500m
             ephemeral-storage: 1Gi

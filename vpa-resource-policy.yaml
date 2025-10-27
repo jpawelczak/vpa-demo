@@ -15,8 +15,8 @@ spec:
         controlledResources: ["cpu", "memory"]
         mode: Auto
         minAllowed:
-          cpu: 250m
-          memory: 512Mi
+          cpu: 200m
+          memory: 256Mi
         maxAllowed:
           cpu: 500m
           memory: 512Mi
