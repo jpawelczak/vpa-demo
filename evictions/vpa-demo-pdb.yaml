@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: vpa-demo-pdb
+spec:
+ selector:
+   matchLabels:
+     run: vpa-demo-pdb
+ replicas: 2
+ template:
+   metadata:
+     labels:
+       run: vpa-demo-pdb
+   spec:
+     containers:
+     - name: vpa-demo-pdb
+       image: us-docker.pkg.dev/gke-demos-345619/gke-demos/hpa-demo:latest
+       resources:
+          requests:
+            cpu: 100m
+            ephemeral-storage: 1Gi
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            ephemeral-storage: 1Gi
+            memory: 256Mi
+       ports:
+       - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: vpa-demo-pdb-service
+spec:
+ ports:
+ - port: 80
+   targetPort: 8080
+ selector:
+   run: vpa-demo-pdb

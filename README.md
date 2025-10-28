@@ -10,7 +10,7 @@ In this demo, we will use VPA as automated workload rightsizing. We will create 
 * `vpa-demo` VerticalPodAutoscaler with the new `InPlaceOrRecreate` mode
 
 A reminder:
-Vertical Pod Autoscaler (VPA) frees users from the necessity of setting up-to-date **resource requests** for the containers in their pods. When configured, it will set the requests automatically based on usage and thus allow proper scheduling onto nodes so that appropriate resource amount is available for each pod. It will also maintain ratios between requests and limits that were specified in initial containers configuration.
+Vertical Pod Autoscaler (VPA) frees users from the necessity of setting up-to-date **resource requests** for the containers in their pods. When configured, it will set the requests automatically based on usage and thus allow proper scheduling onto nodes so that appropriate resource amount is available for each pod. It will also **maintain ratios between requests and limits** that were specified in initial containers configuration.
 
 # Setting up VPA on GKE Standard Cluster
 
@@ -31,10 +31,10 @@ Now let's go through the new VPA's `InPlaceOrRecreate` mode that automatically r
 
 Firstly, lets deploy all the manifests:
 ```
-kubectl apply -f manifests
+kubectl apply -f ./basics/
 ```
 
-VPA with `InPlaceOrRecreate` mode looks like this (/manifests/vpa.yaml):
+VPA with `InPlaceOrRecreate` mode looks like this (/basics/vpa.yaml):
 ```
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -72,7 +72,7 @@ Have you noticed `Message: Some containers have a small number of samples` and `
 
 To set resources on a level required to maintain reliability of the workload, we will apply VPA's `ContainerResourcePolicy` ([details](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler#containerresourcepolicy_v1_autoscalingk8sio)): 
 ```
-kubectl apply -f vpa-resource-policy.yaml
+kubectl apply -f ./container-resource-policy/vpa-resource-policy.yaml
 ```
 
 The `vpa-resource-policy.yaml` looks like this:
@@ -167,14 +167,14 @@ After 1-2 weeks of gathering resource utilization data by VPA, we can revisit `C
 
 # Importance of ContainerResourcePolicy
 
-As a safety net for VPA's actuations of container's resources, it is highly recommended to apply `ContainerResourcePolicy`.
+As a safety net for VPA's actuations of container's resource requests, it is highly recommended to apply `ContainerResourcePolicy`.
 
 You can modify it directly in vpa object (as demonstrated above) or via Console UI:
 ![Screenshot of container resource policy](vpa-ui.png)
 
 # Automated rightsizing based on traffic
 
-Now, let's generate some load for **20 hours** using [hey](https://github.com/rakyll/hey) app: </br>
+Now, let's generate some load for longer duration using [hey](https://github.com/rakyll/hey) app: </br>
 `kubectl run -i --tty --rm hey --image us-docker.pkg.dev/gke-demos-345619/hey/hey --restart=Never --  -c 2 -z 1200m  http://vpa-demo-service`
 
 Once VPA collected some data, it started to apply recommendations within `ContainerResourcePolicy` boundries to match resources with the load:
@@ -188,14 +188,46 @@ vpa-demo-app-6f79bd954f-qnbtn   1/1     Running     0          4d19h
 vpa-demo-app-6f79bd954f-wzdxn   1/1     Running     0          4d18h
 ```
 
-# Addressing potential eviction
+# Addressing potential disruptions
+To compare how the new `InPlaceOrRecreate` mode is less disruptive, you can deploy workloads with VPA in `Recreate` Mode that recreates Pods to apply recommendations:
+```
+kubectl apply -f ./evictions/
+```
+
+Now, let's modify `ContainerResourcePolicy` `minAllowed CPU` few times to "force" actuation.
+
+Meanwhile, observe the PDB for the deployment:
+```
+kubectl describe pdb vpa-demo-pdb
+Name:             vpa-demo-pdb
+Namespace:        default
+Max unavailable:  0
+Selector:         run=vpa-demo-pdb
+Status:
+    Allowed disruptions:  0
+    Current:              2
+    Desired:              2
+    Total:                2
+Events:                   <none>
+```
+
+In some point, PDB will block applying the actuation. 
+
+Now, switch the VPA (vpa-recreate.yaml) to `InPlaceOrRecreate` mode. You will notice that actuations initated by `ContainerResourcePolicy` blocked by PDBs will be applied in-place few seconds after changing the mode from `Recreate` to `InPlaceOrRecreate`.
+
+As you noticed, with VPA `InPlaceOrRecreate` mode you don't have to worries on pod's recreaton in your business critical hours. Nonetheless, follow best practices and set some safety net with PodDisruptionBudget (PDB). Learn more about [workload disruption readiness on GKE](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-disruption-readiness).
+
+# OOMkill handling
 To be continued...
 
 # Summary
 
 With the new `InPlaceOrRecreate` mode in [GKE managed VPA](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler), you can benefit from no-to-low disruptive vertical auto scaling for automated workload rightsizing:
-1. Apply VPA `InPlaceOrRecreate` mode for a workload with minAllowed and maxAllowed values defined in `ContainerResourcePolicy` ([mind GKE Autopilot's min and ratio resource contrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests)) - VPA gathers resource usage data while keeping minimum resources required for reliable workload operation.
-2. Once you gather more resource utilization data, update the `ContainerResourcePolicy` accordingly - let VPA actuate the resources in-place within minAllowed and maxAllowed boundries, so that you can focus on other aspects while improving workload's resource utilization is managed automatically by the VPA IPPR.
+1. For each new workload, apply VPA in advisory mode ("Off") - VPA gathers resource usage data.
+2. After gathering some usage data, apply VPA `InPlaceOrRecreate` mode for a workload with minAllowed values defined in `ContainerResourcePolicy` ([mind GKE Autopilot's min and ratio resource contrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests)). With minAllowed, VPA keeps minimum resources required for reliable workload operation.
+3. Once you gather more resource utilization data, update the `ContainerResourcePolicy` accordingly - let VPA actuate the resources in-place within minAllowed and maxAllowed boundries, so that you can focus on other aspects while improving workload's resource utilization is managed automatically by the VPA IPPR.
+
+Alternativly, apply VPA with `InPlaceOrRecreate` mode from very beginning.
 
 # Questions? Ideas for improvements?
 
