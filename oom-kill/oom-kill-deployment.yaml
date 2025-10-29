@@ -29,15 +29,3 @@ spec:
               i=$((i+1))
               sleep 1
             done
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: vpa-demo-oom
-spec:
-  targetRef:
-    apiVersion: "apps/v1"
-    kind:       Deployment
-    name:       oom-demo
-  updatePolicy:
-    updateMode: "Recreate"  # Use explicit mode instead of deprecated "Auto"
