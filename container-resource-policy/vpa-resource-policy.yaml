@@ -18,5 +18,4 @@ spec:
           cpu: 200m
           memory: 256Mi
         maxAllowed:
-          cpu: 500m
           memory: 512Mi

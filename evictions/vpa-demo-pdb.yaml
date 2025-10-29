@@ -21,7 +21,6 @@ spec:
             ephemeral-storage: 1Gi
             memory: 128Mi
           limits:
-            cpu: 200m
             ephemeral-storage: 1Gi
             memory: 256Mi
        ports:
