@@ -156,7 +156,6 @@ Status:
         Cpu:     1m
         Memory:  2097152
       Upper Bound:
-        Cpu:     250m
         Memory:  512Mi
 Events:
 ```
@@ -187,9 +186,9 @@ vpa-demo-app-6f79bd954f-wzdxn   1/1     Running     0          4d18h
 ```
 
 # Addressing potential disruptions
-To compare how the new `InPlaceOrRecreate` mode is less disruptive, you can deploy workloads with VPA in `Recreate` Mode that recreates Pods to apply recommendations:
+To compare how the new `InPlaceOrRecreate` mode is less disruptive, you can deploy workloads with VPA in `Recreate` Mode, the mode that recreates Pods to apply VPA's recommendations:
 ```
-kubectl apply -f ./evictions/
+kubectl apply -f ./pdb-handling/
 ```
 
 Now, let's modify `ContainerResourcePolicy` `minAllowed CPU` few times to "force" actuation.
@@ -215,7 +214,7 @@ Now, switch the VPA (vpa-recreate.yaml) to `InPlaceOrRecreate` mode. You will no
 
 As you noticed, with VPA `InPlaceOrRecreate` mode you don't have to be concerned on pod's recreaton in your business critical hours. Nonetheless, follow best practices and set some safety net with PodDisruptionBudget (PDB). Learn more about [workload disruption readiness on GKE](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-disruption-readiness).
 
-# OOMkill handling
+# OOM handling
 To be continued...
 
 # Summary

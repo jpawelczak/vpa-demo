@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: vpa-demo-oom
+spec:
+ selector:
+   matchLabels:
+     run: vpa-demo-oom
+ replicas: 1
+ template:
+   metadata:
+     labels:
+       run: vpa-demo-oom
+   spec:
+     containers:
+     - name: vpa-demo-oom
+       image: us-docker.pkg.dev/gke-demos-345619/gke-demos/go-memtest:latest
+       imagePullPolicy: Always
+       resources:
+          requests:
+            cpu: 500m
+            ephemeral-storage: 1Gi
+            memory: 500Mi
+          limits:
+            ephemeral-storage: 1Gi
+            memory: 500Mi
+       ports:
+       - containerPort: 8080
