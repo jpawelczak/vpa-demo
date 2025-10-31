@@ -9,7 +9,7 @@ spec:
     name:       vpa-demo-oom
   updatePolicy:
     updateMode: "Recreate"  # Use explicit mode instead of deprecated "Auto"
-    minReplicas: 1
+    minReplicas: 1 # Define it for single Pod workloads
   resourcePolicy:
     containerPolicies:
       - containerName: 'vpa-demo-oom'

@@ -14,16 +14,16 @@ spec:
    spec:
      containers:
      - name: vpa-demo-oom
-       args: ["--oom"]
+       args: ["--oom"] # the --oom argument will cause OOMs, comment this argument to "turn-off" OOMs
        image: us-docker.pkg.dev/gke-demos-345619/gke-demos/go-memtest:latest
        imagePullPolicy: Always
        resources:
           requests:
             cpu: 500m
             ephemeral-storage: 2Gi
-            memory: 500Mi
+            memory: 1Gi
           limits:
             ephemeral-storage: 2Gi
-            memory: 500Mi
+            memory: 1Gi
        ports:
        - containerPort: 8080
