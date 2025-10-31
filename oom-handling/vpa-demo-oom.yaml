@@ -14,16 +14,16 @@ spec:
    spec:
      containers:
      - name: vpa-demo-oom
-#       args: ["--oom"]
+       args: ["--oom"]
        image: us-docker.pkg.dev/gke-demos-345619/gke-demos/go-memtest:latest
        imagePullPolicy: Always
        resources:
           requests:
             cpu: 500m
-            ephemeral-storage: 1Gi
+            ephemeral-storage: 2Gi
             memory: 500Mi
           limits:
-            ephemeral-storage: 1Gi
+            ephemeral-storage: 2Gi
             memory: 500Mi
        ports:
        - containerPort: 8080
