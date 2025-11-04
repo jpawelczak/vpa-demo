@@ -215,7 +215,7 @@ Now, switch the VPA (vpa-recreate.yaml) to `InPlaceOrRecreate` mode. You will no
 As you noticed, with VPA `InPlaceOrRecreate` mode you don't have to be concerned on pod's recreaton in your business critical hours. Nonetheless, follow best practices and set some safety net with PodDisruptionBudget (PDB). Learn more about [workload disruption readiness on GKE](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-disruption-readiness).
 
 # OOM handling
-Data intensive workloads may increase Mem ending up with OOMs. In such situation, container is restarted and VPA adds 20% to Mem resources.
+Imagine you have a workload that is automatically rightsized using in-place pod resizing technology, but sometimes the workload needs to absorb more data. With below example, you decrease the number of on-going disruptions and at the same time handle the OOM events. In case of OOMs, container is restarted and VPA adds 20% to Mem resources.
 
 Below deployment has 2 `replicas` for high availibility of the workload:
 ```
@@ -282,7 +282,7 @@ Now, let's deploy it all together:
 kubectl apply -f ./oom-handling/
 ```
 
-You will observe that the workload is restarted and the Mem resources are bumped. In some point, the pod will become unschedulable due to Mem exceeding Node's capacity.
+You will observe that the workload is restarted and the Mem resources are bumped every few minutes (in some point, the pod will become unschedulable due to Mem exceeding Node's capacity).
 
 Learn more about [Troubleshooting OOM events in GKE](https://docs.cloud.google.com/kubernetes-engine/docs/troubleshooting/oom-events).
 
