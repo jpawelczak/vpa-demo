@@ -282,7 +282,7 @@ Now, let's deploy it all together:
 kubectl apply -f ./oom-handling/
 ```
 
-You will observe that the workload is restarted and the Mem resources are bumped every few minutes (in some point, the pod will become unschedulable due to Mem exceeding Node's capacity).
+You will observe that the workload is restarted and VPA bumps Mem resources every few minutes as the go-memtest app keeps repeating the OOM event.
 
 Learn more about [Troubleshooting OOM events in GKE](https://docs.cloud.google.com/kubernetes-engine/docs/troubleshooting/oom-events).
 
