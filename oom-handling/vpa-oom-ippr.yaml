@@ -1,18 +1,18 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: vpa-demo-oom
+  name: vpa-oom-ippr
 spec:
   targetRef:
     apiVersion: "apps/v1"
     kind:       Deployment
-    name:       vpa-demo-oom
+    name:       vpa-demo-oom-ippr
   updatePolicy:
-    updateMode: "Recreate"  # Use explicit mode instead of deprecated "Auto"
+    updateMode: "InPlaceOrRecreate"  # Use explicit mode instead of deprecated "Auto"
     minReplicas: 1 # Define it for single Pod workloads
   resourcePolicy:
     containerPolicies:
-      - containerName: 'vpa-demo-oom'
+      - containerName: 'vpa-demo-oom-ippr'
         controlledResources: ["cpu", "memory"]
         mode: Auto
         minAllowed:

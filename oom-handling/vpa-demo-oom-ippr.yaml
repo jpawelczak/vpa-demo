@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: vpa-demo-oom
+ name: vpa-demo-oom-ippr
 spec:
  selector:
    matchLabels:
-     run: vpa-demo-oom
+     run: vpa-demo-oom-ippr
  replicas: 1
  template:
    metadata:
      labels:
-       run: vpa-demo-oom
+       run: vpa-demo-oom-ippr
    spec:
      containers:
-     - name: vpa-demo-oom
+     - name: vpa-demo-oom-ippr
        args: ["--oom"] # the --oom argument will cause OOMs, comment this argument to "turn-off" OOMs
        image: us-docker.pkg.dev/gke-demos-345619/gke-demos/go-memtest:latest
        imagePullPolicy: Always
@@ -21,9 +21,9 @@ spec:
           requests:
             cpu: 500m
             ephemeral-storage: 2Gi
-            memory: 1Gi
+            memory: 500Mi
           limits:
             ephemeral-storage: 2Gi
-            memory: 1Gi
+            memory: 500Mi
        ports:
        - containerPort: 8080

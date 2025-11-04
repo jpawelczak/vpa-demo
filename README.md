@@ -215,12 +215,81 @@ Now, switch the VPA (vpa-recreate.yaml) to `InPlaceOrRecreate` mode. You will no
 As you noticed, with VPA `InPlaceOrRecreate` mode you don't have to be concerned on pod's recreaton in your business critical hours. Nonetheless, follow best practices and set some safety net with PodDisruptionBudget (PDB). Learn more about [workload disruption readiness on GKE](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-disruption-readiness).
 
 # OOM handling
-To be continued...
+Data intensive workloads may increase Mem ending up with OOMs. In such situation, container is restarted and VPA adds 20% to Mem resources.
+
+Below deployment has 2 `replicas` for high availibility of the workload:
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: vpa-demo-oom-ippr
+spec:
+ selector:
+   matchLabels:
+     run: vpa-demo-oom-ippr
+ replicas: 2
+ template:
+   metadata:
+     labels:
+       run: vpa-demo-oom-ippr
+   spec:
+     containers:
+     - name: vpa-demo-oom-ippr
+       args: ["--oom"] # the --oom argument will cause OOMs, comment this argument to "turn-off" OOMs
+       image: us-docker.pkg.dev/gke-demos-345619/gke-demos/go-memtest:latest
+       imagePullPolicy: Always
+       resources:
+          requests:
+            cpu: 500m
+            ephemeral-storage: 2Gi
+            memory: 500Mi
+          limits:
+            ephemeral-storage: 2Gi
+            memory: 500Mi
+       ports:
+       - containerPort: 8080
+```
+The deployment uses go-memtest app to simulate OOMs ([source](https://github.com/gke-demos/go-memtest)).
+
+Reminder: VPA uses `minReplicas` configuration to decide if it can evict a pod to apply the recommendation: "the minimum number of replicas which need to be alive to attempt Pod eviction (pending other checks like Pod Disruption Budget)" ([GKE VPA docs](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler#podupdatepolicy_v1_autoscalingk8sio)).
+
+Here is VPA `InPlaceOrRecreate` mode with `minReplicas: 1`:
+```
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vpa-oom-ippr
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       vpa-demo-oom-ippr
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"  # Use explicit mode instead of deprecated "Auto"
+    minReplicas: 1 # Define it for single Pod workloads
+  resourcePolicy:
+    containerPolicies:
+      - containerName: 'vpa-demo-oom-ippr'
+        controlledResources: ["cpu", "memory"]
+        mode: Auto
+        minAllowed:
+          cpu: 100m
+          memory: 100Mi
+```
+
+Now, let's deploy it all together:
+```
+kubectl apply -f ./oom-handling/
+```
+
+You will observe that the workload is restarted and the Mem resources are bumped. In some point, the pod will become unschedulable due to Mem exceeding Node's capacity.
+
+Learn more about [Troubleshooting OOM events in GKE](https://docs.cloud.google.com/kubernetes-engine/docs/troubleshooting/oom-events).
 
 # Summary
 
 With the new `InPlaceOrRecreate` mode in [GKE managed VPA](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler), you can benefit from no-to-low disruptive vertical auto scaling for automated workload rightsizing:
-1. For each new workload, apply VPA in advisory mode ("Off" Mode) - this way VPA gathers resource usage data and fine-tune the recommendations based on the usage pattern.
+1. For each new workload, apply VPA in advisory mode (`Off` Mode) - this way VPA gathers resource usage data and fine-tune the recommendations based on the usage pattern.
 2. After gathering some usage data, apply VPA `InPlaceOrRecreate` mode for a workload with minAllowed values defined in `ContainerResourcePolicy` ([mind GKE Autopilot's min and ratio resource contrains](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests)). With minAllowed, VPA keeps minimum resources required for reliable workload operation.
 3. Once you gather more resource utilization data, update the `ContainerResourcePolicy` accordingly - let VPA actuate the resources in-place within minAllowed and maxAllowed boundries, so that you can focus on other aspects while improving workload's resource utilization is managed automatically by the VPA IPPR.
 
