@@ -16,6 +16,6 @@ spec:
         mode: Auto
         minAllowed:
           cpu: 100m
-          memory: 128Mi
+          memory: 200Mi
         maxAllowed:
-          memory: 256Mi
+          memory: 300Mi

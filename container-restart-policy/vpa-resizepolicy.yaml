@@ -1,17 +1,17 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: vpa-demo
+  name: vpa-demo-restartpolicy
 spec:
   targetRef:
     apiVersion: "apps/v1"
     kind:       Deployment
-    name:       vpa-demo-app
+    name:       vpa-demo-restartpolicy
   updatePolicy:
     updateMode: "InPlaceOrRecreate"  # Use explicit mode instead of deprecated "Auto"
   resourcePolicy:
     containerPolicies:
-      - containerName: 'vpa-demo-app'
+      - containerName: 'vpa-demo-restartpolicy'
         controlledResources: ["cpu", "memory"]
         mode: Auto
         minAllowed:

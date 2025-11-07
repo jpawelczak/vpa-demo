@@ -1,20 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: vpa-demo-pdb
+ name: vpa-demo-restartpolicy
 spec:
  selector:
    matchLabels:
-     run: vpa-demo-pdb
+     run: vpa-demo-restartpolicy
  replicas: 2
  template:
    metadata:
      labels:
-       run: vpa-demo-pdb
+       run: vpa-demo-restartpolicy
    spec:
      containers:
-     - name: vpa-demo-pdb
+     - name: vpa-demo-restartpolicy
        image: us-docker.pkg.dev/gke-demos-345619/gke-demos/hpa-demo:latest
+       resizePolicy:
+       - resourceName: cpu
+         restartPolicy: NotRequired # Default, but explicit here
+       - resourceName: memory
+         restartPolicy: RestartContainer
        resources:
           requests:
             cpu: 100m
@@ -25,14 +30,3 @@ spec:
             memory: 300Mi
        ports:
        - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
- name: vpa-demo-pdb-service
-spec:
- ports:
- - port: 80
-   targetPort: 8080
- selector:
-   run: vpa-demo-pdb

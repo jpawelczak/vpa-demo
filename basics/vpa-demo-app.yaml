@@ -19,10 +19,10 @@ spec:
           requests:
             cpu: 100m
             ephemeral-storage: 1Gi
-            memory: 128Mi
+            memory: 200Mi
           limits:
             ephemeral-storage: 1Gi
-            memory: 512Mi
+            memory: 300Mi
        ports:
        - containerPort: 8080
 ---

@@ -282,9 +282,51 @@ Now, let's deploy it all together:
 kubectl apply -f ./oom-handling/
 ```
 
-You will observe that the workload is restarted and VPA bumps Mem resources every few minutes as the go-memtest app keeps repeating the OOM event.
+You will observe that the workload is restarted and VPA bumps-up Mem resources every few minutes as the go-memtest app keeps repeating the OOM event.
 
 Learn more about [Troubleshooting OOM events in GKE](https://docs.cloud.google.com/kubernetes-engine/docs/troubleshooting/oom-events).
+
+# Forcing recreation for Mem adjustments
+
+If you have a workload that requires recreation during Mem adjustment, you can specify that aspect in container's `resizePolicy`:
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: vpa-demo-restartpolicy
+spec:
+ selector:
+   matchLabels:
+     run: vpa-demo-restartpolicy
+ replicas: 2
+ template:
+   metadata:
+     labels:
+       run: vpa-demo-restartpolicy
+   spec:
+     containers:
+     - name: vpa-demo-restartpolicy
+       image: us-docker.pkg.dev/gke-demos-345619/gke-demos/hpa-demo:latest
+       resizePolicy:
+       - resourceName: cpu
+         restartPolicy: NotRequired # Default, but explicit here
+       - resourceName: memory
+         restartPolicy: RestartContainer
+       resources:
+          requests:
+            cpu: 100m
+            ephemeral-storage: 1Gi
+            memory: 200Mi
+          limits:
+            ephemeral-storage: 1Gi
+            memory: 300Mi
+       ports:
+       - containerPort: 8080
+```
+
+Now, change CPU minAllowed in `ContainerResourcePolicy` - you will observe CPU's in-place scale-up without any disruption. Now, change the minAllowed Mem - the container will be restarted togher with Mem's in-place scale-up (less disruptive - without Pod recreation).
+
+Noticed that other examples do not specify container's `resizePolicy`? If you do not specify the resizePolicy, the default would be `NotRequired`. Learn more about container level resizePolicy [here](https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/). Also, mind that you have container-level [resizePolicy](https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/) and seperately container-level [restartRules](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-restart-rules), both for different purpose.
 
 # Summary
 
