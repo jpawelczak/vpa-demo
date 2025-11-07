@@ -95,9 +95,9 @@ spec:
         mode: Auto
         minAllowed:
           cpu: 200m
-          memory: 256Mi
+          memory: 200Mi
         maxAllowed:
-          memory: 512Mi
+          memory: 300Mi
 ```
 
 Once applied `ContainerResourcePolicy`, you will notice that VPA resizes pod's resource requests in-place to 250m CPU and 256Mi Mem, value being our minimum CPU to maintain workload's reliability. You can check in-place scaling events created by applying `ContainerResourcePolicy` `minAllowed` in "Pod details" page , Events tab:
@@ -124,10 +124,10 @@ Spec:
         cpu
         memory
       Max Allowed:
-        Memory:  512Mi
+        Memory:  300Mi
       Min Allowed:
-        Cpu:     150m
-        Memory:  256Mi
+        Cpu:     200m
+        Memory:  200Mi
       Mode:      Auto
   Target Ref:
     API Version:  apps/v1
@@ -147,16 +147,16 @@ Status:
     Container Recommendations:
       Container Name:  vpa-demo-app
       Lower Bound:
-        Cpu:     250m
-        Memory:  512Mi
+        Cpu:     200m
+        Memory:  200Mi
       Target:
-        Cpu:     250m
-        Memory:  512Mi
+        Cpu:     200m
+        Memory:  200Mi
       Uncapped Target:
         Cpu:     1m
         Memory:  2097152
       Upper Bound:
-        Memory:  512Mi
+        Memory:  300Mi
 Events:
 ```
 
@@ -286,9 +286,9 @@ You will observe that the workload is restarted and VPA bumps-up Mem resources e
 
 Learn more about [Troubleshooting OOM events in GKE](https://docs.cloud.google.com/kubernetes-engine/docs/troubleshooting/oom-events).
 
-# Forcing recreation for Mem adjustments
+# Forcing container restart for Mem adjustments
 
-If you have a workload that requires recreation during Mem adjustment, you can specify that aspect in container's `resizePolicy`:
+If you have a workload that requires container restart during Mem adjustment, you can specify that aspect in container's `resizePolicy`:
 ```
 apiVersion: apps/v1
 kind: Deployment
@@ -326,7 +326,9 @@ spec:
 
 Now, change CPU minAllowed in `ContainerResourcePolicy` - you will observe CPU's in-place scale-up without any disruption. Now, change the minAllowed Mem - the container will be restarted togher with Mem's in-place scale-up (less disruptive - without Pod recreation).
 
-Noticed that other examples do not specify container's `resizePolicy`? If you do not specify the resizePolicy, the default would be `NotRequired`. Learn more about container level resizePolicy [here](https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/). Also, mind that you have container-level [resizePolicy](https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/) and seperately container-level [restartRules](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-restart-rules), both for different purpose.
+Noticed that other examples do not specify container's `resizePolicy`? If you do not specify the resizePolicy, the default would be `NotRequired`. Learn more about container level resizePolicy [here](https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/). 
+
+Also, mind that you have container-level [resizePolicy](https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/) and seperately container-level [restartRules](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-restart-rules), both for different purpose.
 
 # Summary
 
