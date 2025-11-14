@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello3
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Allow
+  startingDeadlineSeconds: 100
+  suspend: false
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello3
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - date; timeout 300 dd if=/dev/urandom | gzip -9 >> /dev/null
+          restartPolicy: OnFailure
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vpa-cronjob3
+spec:
+  targetRef:
+    apiVersion: "batch/v1"
+    kind: CronJob
+    name: hello3
+  updatePolicy:
+    updateMode: "Initial"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: '*'
+        minAllowed:
+          cpu: 50m
+          memory: 10Mi
+        maxAllowed:
+          cpu: 2
+          memory: 2Gi
+        controlledResources: ["cpu", "memory"]

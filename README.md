@@ -288,7 +288,7 @@ Learn more about [Troubleshooting OOM events in GKE](https://docs.cloud.google.c
 
 # Forcing container restart for Mem adjustments
 
-If you have a workload that requires container restart during Mem adjustment, you can specify that aspect in container's `resizePolicy`:
+If you have a workload that requires pod recreation during Mem adjustment, you can specify that aspect in container's `resizePolicy`:
 ```
 apiVersion: apps/v1
 kind: Deployment
